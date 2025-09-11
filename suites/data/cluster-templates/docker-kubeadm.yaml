@@ -2,33 +2,16 @@ apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: DockerCluster
 metadata:
   name: ${CLUSTER_NAME}
-  annotations:
-    "helm.sh/resource-policy": keep
-spec:
-  failureDomains:
-    fd1:
-      controlPlane: true
-    fd2:
-      controlPlane: true
-    fd3:
-      controlPlane: true
-    fd4:
-      controlPlane: false
-    fd5:
-      controlPlane: false
-    fd6:
-      controlPlane: false
-    fd7:
-      controlPlane: false
-    fd8:
-      controlPlane: false
+  namespace: ${NAMESPACE}
+spec: {}
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
   labels:
-    cni: ${CLUSTER_NAME}-crs-0
+    cni: ${CLUSTER_NAME}-crs-kindnet-0
   name: ${CLUSTER_NAME}
+  namespace: ${NAMESPACE}
 spec:
   clusterNetwork:
     pods:
@@ -51,6 +34,7 @@ apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: DockerMachineTemplate
 metadata:
   name: ${CLUSTER_NAME}-control-plane
+  namespace: ${NAMESPACE}
 spec:
   template:
     spec:
@@ -62,8 +46,7 @@ apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 kind: KubeadmControlPlane
 metadata:
   name: ${CLUSTER_NAME}-control-plane
-  annotations:
-    "helm.sh/resource-policy": keep
+  namespace: ${NAMESPACE}
 spec:
   kubeadmConfigSpec:
     clusterConfiguration:
@@ -76,16 +59,6 @@ spec:
       controllerManager:
         extraArgs:
           enable-hostpath-provisioner: "true"
-    initConfiguration:
-      nodeRegistration:
-        criSocket: unix:///var/run/containerd/containerd.sock
-        kubeletExtraArgs:
-          eviction-hard: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%
-    joinConfiguration:
-      nodeRegistration:
-        criSocket: unix:///var/run/containerd/containerd.sock
-        kubeletExtraArgs:
-          eviction-hard: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%
   machineTemplate:
     infrastructureRef:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -98,6 +71,7 @@ apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: DockerMachineTemplate
 metadata:
   name: ${CLUSTER_NAME}-md-0
+  namespace: ${NAMESPACE}
 spec:
   template:
     spec:
@@ -109,28 +83,19 @@ apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: KubeadmConfigTemplate
 metadata:
   name: ${CLUSTER_NAME}-md-0
-  annotations:
-    "helm.sh/resource-policy": keep
+  namespace: ${NAMESPACE}
 spec:
   template:
-    spec:
-      joinConfiguration:
-        nodeRegistration:
-          criSocket: unix:///var/run/containerd/containerd.sock
-          kubeletExtraArgs:
-            eviction-hard: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%
+    spec: {}
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
 metadata:
   name: ${CLUSTER_NAME}-md-0
-  annotations:
-    "helm.sh/resource-policy": keep
+  namespace: ${NAMESPACE}
 spec:
   clusterName: ${CLUSTER_NAME}
   replicas: ${WORKER_MACHINE_COUNT}
-  selector:
-    matchLabels: null
   template:
     spec:
       bootstrap:
@@ -139,7 +104,6 @@ spec:
           kind: KubeadmConfigTemplate
           name: ${CLUSTER_NAME}-md-0
       clusterName: ${CLUSTER_NAME}
-      failureDomain: fd4
       infrastructureRef:
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: DockerMachineTemplate
@@ -149,135 +113,13 @@ spec:
 apiVersion: addons.cluster.x-k8s.io/v1beta1
 kind: ClusterResourceSet
 metadata:
-  name: ${CLUSTER_NAME}-crs-0
+  name: ${CLUSTER_NAME}-crs-kindnet-0
+  namespace: ${NAMESPACE}
 spec:
   clusterSelector:
     matchLabels:
-      cni: ${CLUSTER_NAME}-crs-0
+      cni: ${CLUSTER_NAME}-crs-kindnet-0
   resources:
   - kind: ConfigMap
-    name: cni-${CLUSTER_NAME}-crs-0
+    name: cni-kindnet
   strategy: ApplyOnce
----
-apiVersion: v1
-data:
-  kindnet.yaml: |
-    # kindnetd networking manifest
-    ---
-    kind: ClusterRole
-    apiVersion: rbac.authorization.k8s.io/v1
-    metadata:
-      name: kindnet
-    rules:
-      - apiGroups:
-          - ""
-        resources:
-          - nodes
-        verbs:
-          - list
-          - watch
-          - patch
-      - apiGroups:
-          - ""
-        resources:
-          - configmaps
-        verbs:
-          - get
-    ---
-    kind: ClusterRoleBinding
-    apiVersion: rbac.authorization.k8s.io/v1
-    metadata:
-      name: kindnet
-    roleRef:
-      apiGroup: rbac.authorization.k8s.io
-      kind: ClusterRole
-      name: kindnet
-    subjects:
-      - kind: ServiceAccount
-        name: kindnet
-        namespace: kube-system
-    ---
-    apiVersion: v1
-    kind: ServiceAccount
-    metadata:
-      name: kindnet
-      namespace: kube-system
-    ---
-    apiVersion: apps/v1
-    kind: DaemonSet
-    metadata:
-      name: kindnet
-      namespace: kube-system
-      labels:
-        tier: node
-        app: kindnet
-        k8s-app: kindnet
-    spec:
-      selector:
-        matchLabels:
-          app: kindnet
-      template:
-        metadata:
-          labels:
-            tier: node
-            app: kindnet
-            k8s-app: kindnet
-        spec:
-          hostNetwork: true
-          tolerations:
-            - operator: Exists
-              effect: NoSchedule
-          serviceAccountName: kindnet
-          containers:
-            - name: kindnet-cni
-              image: kindest/kindnetd:v20230511-dc714da8
-              env:
-                - name: HOST_IP
-                  valueFrom:
-                    fieldRef:
-                      fieldPath: status.hostIP
-                - name: POD_IP
-                  valueFrom:
-                    fieldRef:
-                      fieldPath: status.podIP
-                - name: POD_SUBNET
-                  value: '10.1.0.0/16'
-              volumeMounts:
-                - name: cni-cfg
-                  mountPath: /etc/cni/net.d
-                - name: xtables-lock
-                  mountPath: /run/xtables.lock
-                  readOnly: false
-                - name: lib-modules
-                  mountPath: /lib/modules
-                  readOnly: true
-              resources:
-                requests:
-                  cpu: "100m"
-                  memory: "50Mi"
-                limits:
-                  cpu: "100m"
-                  memory: "50Mi"
-              securityContext:
-                privileged: false
-                capabilities:
-                  add: ["NET_RAW", "NET_ADMIN"]
-          volumes:
-            - name: cni-bin
-              hostPath:
-                path: /opt/cni/bin
-                type: DirectoryOrCreate
-            - name: cni-cfg
-              hostPath:
-                path: /etc/cni/net.d
-                type: DirectoryOrCreate
-            - name: xtables-lock
-              hostPath:
-                path: /run/xtables.lock
-                type: FileOrCreate
-            - name: lib-modules
-              hostPath:
-                path: /lib/modules
-kind: ConfigMap
-metadata:
-  name: cni-${CLUSTER_NAME}-crs-0

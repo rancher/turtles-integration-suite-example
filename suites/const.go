@@ -30,6 +30,18 @@ var (
 	//go:embed data/cluster-templates/docker-rke2.yaml
 	CAPIDockerRKE2 []byte
 
+	//go:embed data/cluster-templates/kindnet-config.yaml
+	KindnetConfig []byte
+
+	//go:embed data/cluster-templates/load-balancer-config.yaml
+	LoadBalancerConfig []byte
+
 	//go:embed data/rancher/settings-patch.yaml
 	RancherSettingsPatch []byte
+
+	//go:embed data/providers/docker.yaml
+	CAPIProviderDocker []byte
+
+	//go:embed data/providers/kubeadm.yaml
+	CAPIProviderKubeadm []byte
 )
