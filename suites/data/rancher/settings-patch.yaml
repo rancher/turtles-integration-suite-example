@@ -1,6 +1,19 @@
+# You can add custom Rancher Settings to tailor the environment to your needs.
 ---
 apiVersion: management.cattle.io/v3
 kind: Setting
 metadata:
-  name: agent-tls-mode
-value: "system-store"
+  name: server-url
+value: https://${RANCHER_HOSTNAME}
+---
+apiVersion: management.cattle.io/v3
+kind: Setting
+metadata:
+  name: first-login
+value: "false"
+---
+apiVersion: management.cattle.io/v3
+kind: Setting
+metadata:
+  name: eula-agreed
+value: "2025-09-10T00:00:00.000Z"

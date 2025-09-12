@@ -17,50 +17,33 @@
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-CURL_RETRIES=3
-
 # Directories
-
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 BIN_DIR := bin
-TEST_DIR := test
+TEST_DIR := suites
 TOOLS_DIR := hack/tools
 TOOLS_BIN_DIR := $(abspath $(TOOLS_DIR)/$(BIN_DIR))
-
-$(TOOLS_BIN_DIR):
-	mkdir -p $@
+ARTIFACTS_FOLDER ?= ${ROOT_DIR}/_artifacts
+ARTIFACTS ?= ${ARTIFACTS_FOLDER}
 
 export PATH := $(abspath $(TOOLS_BIN_DIR)):$(PATH)
+export KREW_ROOT := $(abspath $(TOOLS_BIN_DIR))
+export PATH := $(KREW_ROOT)/bin:$(PATH)
 
-# Dependencies
+# Tools
+CURL_RETRIES = 3 # Retries to download a tool
 
-# Helper function to get dependency version from go.mod
-get_go_version = $(shell go list -m $1 | awk '{print $$2}')
-
+GO_VERSION ?= $(shell grep "go " go.mod | head -1 |awk '{print $$NF}')
 GO_INSTALL := ./scripts/go-install.sh
 
 GINKGO_BIN := ginkgo
-GINGKO_VER := $(call get_go_version,github.com/onsi/ginkgo/v2)
+GINGKO_VER := $(shell grep "github.com/onsi/ginkgo/v2" go.mod | head -1 |awk '{print $$NF}')
 GINKGO := $(abspath $(TOOLS_BIN_DIR)/$(GINKGO_BIN)-$(GINGKO_VER))
 GINKGO_PKG := github.com/onsi/ginkgo/v2/ginkgo
 
-HELM_VER := v3.14.0
+HELM_VER := v3.18.4
 HELM_BIN := helm
 HELM := $(TOOLS_BIN_DIR)/$(HELM_BIN)-$(HELM_VER)
-
-CLUSTERCTL_VER := v1.4.6
-CLUSTERCTL_BIN := clusterctl
-CLUSTERCTL := $(TOOLS_BIN_DIR)/$(CLUSTERCTL_BIN)-$(CLUSTERCTL_VER)
-
-.PHONY: $(GINKGO_BIN)
-$(GINKGO_BIN): $(GINKGO) ## Build a local copy of ginkgo.
-
-$(GINKGO): # Build ginkgo from tools folder.
-	GOBIN=$(TOOLS_BIN_DIR) $(GO_INSTALL) $(GINKGO_PKG) $(GINKGO_BIN) $(GINGKO_VER)
-
-$(CLUSTERCTL): $(TOOLS_BIN_DIR) ## Download and install clusterctl
-	curl --retry $(CURL_RETRIES) -fsSL -o $(CLUSTERCTL) https://github.com/kubernetes-sigs/cluster-api/releases/download/$(CLUSTERCTL_VER)/clusterctl-linux-amd64
-	chmod +x $(CLUSTERCTL)
 
 $(HELM): ## Put helm into tools folder.
 	mkdir -p $(TOOLS_BIN_DIR)
@@ -71,10 +54,12 @@ $(HELM): ## Put helm into tools folder.
 	ln -sf $(HELM) $(TOOLS_BIN_DIR)/$(HELM_BIN)
 	rm -f $(TOOLS_BIN_DIR)/get_helm.sh
 
-kubectl: # Download kubectl cli into tools bin folder
+$(GINKGO): # Build ginkgo from tools folder.
+	GOBIN=$(TOOLS_BIN_DIR) $(GO_INSTALL) $(GINKGO_PKG) $(GINKGO_BIN) $(GINGKO_VER)
+
+kubectl: # Download kubectl cli if not available, and crust-gather plugin into tools bin folder
 	scripts/ensure-kubectl.sh \
-		-b $(TOOLS_BIN_DIR) \
-		$(KUBECTL_VERSION)
+		-b $(TOOLS_BIN_DIR) ""
 
 #
 # Ginkgo configuration.
@@ -85,28 +70,23 @@ GINKGO_NODES ?= 1
 GINKGO_TIMEOUT ?= 2h
 GINKGO_POLL_PROGRESS_AFTER ?= 60m
 GINKGO_POLL_PROGRESS_INTERVAL ?= 5m
-E2E_CONF_FILE ?= $(ROOT_DIR)/config/config.yaml
 GINKGO_ARGS ?=
 GINKGO_NOCOLOR ?= false
-GINKGO_LABEL_FILTER ?= 
-GINKGO_TESTS ?= $(ROOT_DIR)/suites/...
+GINKGO_LABEL_FILTER ?=
+GINKGO_TESTS ?= $(ROOT_DIR)/$(TEST_DIR)/...
+E2E_CONFIG ?= $(ROOT_DIR)/config/config.yaml
 
-MANAGEMENT_CLUSTER_ENVIRONMENT ?= kind
-SKIP_RESOURCE_CLEANUP ?= false
-USE_EXISTING_CLUSTER ?= false
-GITEA_CUSTOM_INGRESS ?= false
-
-E2ECONFIG_VARS ?= MANAGEMENT_CLUSTER_ENVIRONMENT=$(MANAGEMENT_CLUSTER_ENVIRONMENT) \
+# Test run configuration
+E2ECONFIG_VARS ?= ROOT_DIR=$(ROOT_DIR) \
+E2E_CONFIG=$(E2E_CONFIG) \
 ARTIFACTS=$(ARTIFACTS) \
+ARTIFACTS_FOLDER=$(ARTIFACTS_FOLDER) \
 HELM_BINARY_PATH=$(HELM) \
-CLUSTERCTL_BINARY_PATH=$(CLUSTERCTL) \
-SKIP_RESOURCE_CLEANUP=$(SKIP_RESOURCE_CLEANUP) \
-USE_EXISTING_CLUSTER=$(USE_EXISTING_CLUSTER) \
+TURTLES_PATH=$(E2E_CONFIG) #not really used, just for validation
 
-.PHONY: test
-test: $(GINKGO) $(HELM) $(CLUSTERCTL) kubectl
-	$(E2ECONFIG_VARS) $(GINKGO) -v --trace -poll-progress-after=$(GINKGO_POLL_PROGRESS_AFTER) \
+.PHONY: test-e2e
+test-e2e: $(HELM) $(GINKGO) kubectl ## Run the end-to-end tests
+	$(E2ECONFIG_VARS) $(GINKGO) -v --trace -p -procs=10 -poll-progress-after=$(GINKGO_POLL_PROGRESS_AFTER) \
 		-poll-progress-interval=$(GINKGO_POLL_PROGRESS_INTERVAL) --tags=e2e --focus="$(GINKGO_FOCUS)" --label-filter="$(GINKGO_LABEL_FILTER)" \
 		$(_SKIP_ARGS) --nodes=$(GINKGO_NODES) --timeout=$(GINKGO_TIMEOUT) --no-color=$(GINKGO_NOCOLOR) \
-		--output-dir="$(ARTIFACTS)" --junit-report="junit.e2e_suite.1.xml" $(GINKGO_ARGS) $(GINKGO_TESTS) -- \
-	    -e2e.config="$(E2E_CONF_FILE)" \
+		--output-dir="$(ARTIFACTS)" --junit-report="junit.e2e_suite.1.xml" $(GINKGO_ARGS) $(GINKGO_TESTS)
