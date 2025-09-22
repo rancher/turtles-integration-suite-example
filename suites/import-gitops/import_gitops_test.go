@@ -35,8 +35,8 @@ var _ = Describe("[Docker] [Kubeadm]  Create and delete CAPI cluster functionali
 		komega.SetContext(ctx)
 	})
 
-	specs.CreateMgmtV3UsingGitOpsSpec(ctx, func() specs.CreateMgmtV3UsingGitOpsSpecInput {
-		return specs.CreateMgmtV3UsingGitOpsSpecInput{
+	specs.CreateUsingGitOpsSpec(ctx, func() specs.CreateUsingGitOpsSpecInput {
+		return specs.CreateUsingGitOpsSpecInput{
 			E2EConfig:                      e2e.LoadE2EConfig(),
 			BootstrapClusterProxy:          bootstrapClusterProxy,
 			ClusterTemplate:                suites.CAPIDockerKubeadm,
@@ -62,8 +62,8 @@ var _ = Describe("[Docker] [RKE2] Create and delete CAPI cluster functionality s
 		komega.SetContext(ctx)
 	})
 
-	specs.CreateMgmtV3UsingGitOpsSpec(ctx, func() specs.CreateMgmtV3UsingGitOpsSpecInput {
-		return specs.CreateMgmtV3UsingGitOpsSpecInput{
+	specs.CreateUsingGitOpsSpec(ctx, func() specs.CreateUsingGitOpsSpecInput {
+		return specs.CreateUsingGitOpsSpecInput{
 			E2EConfig:                      e2e.LoadE2EConfig(),
 			BootstrapClusterProxy:          bootstrapClusterProxy,
 			ClusterTemplate:                suites.CAPIDockerRKE2,
