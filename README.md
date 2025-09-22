@@ -56,8 +56,8 @@ Test artifacts will be collected in the `ARTIFACTS_FOLDER`, by default `_artifac
 
     ```txt
     require (
-        github.com/rancher/turtles v0.24.0-rc.0
-        github.com/rancher/turtles/test v0.24.0-rc.0
+        github.com/rancher/turtles v0.24.1
+        github.com/rancher/turtles/test v0.24.1
     )
     ```
 
