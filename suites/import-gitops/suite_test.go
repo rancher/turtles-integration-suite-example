@@ -25,6 +25,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/turtles-integration-suite-example/suites"
+	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/json"
 	capiframework "sigs.k8s.io/cluster-api/test/framework"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -63,6 +65,11 @@ var _ = SynchronizedBeforeSuite(
 			Scheme:    e2e.InitScheme(),
 		})
 
+		By("Deploying CertManager")
+		testenv.DeployCertManager(ctx, testenv.DeployCertManagerInput{
+			BootstrapClusterProxy: setupClusterResult.BootstrapClusterProxy,
+		})
+
 		By("Deploying Rancher Ingress")
 		testenv.RancherDeployIngress(ctx, testenv.RancherDeployIngressInput{
 			BootstrapClusterProxy:     setupClusterResult.BootstrapClusterProxy,
@@ -77,22 +84,22 @@ var _ = SynchronizedBeforeSuite(
 			RancherPatches:        [][]byte{suites.RancherSettingsPatch},
 		})
 
-		By("Deploying Rancher Turtles")
-		testenv.DeployRancherTurtles(ctx, testenv.DeployRancherTurtlesInput{
-			BootstrapClusterProxy: setupClusterResult.BootstrapClusterProxy,
-			TurtlesChartRepoName:  e2eConfig.GetVariableOrEmpty("TURTLES_REPO_NAME"),
-			TurtlesChartUrl:       e2eConfig.GetVariableOrEmpty("TURTLES_URL"),
-			Version:               e2eConfig.GetVariableOrEmpty("TURTLES_VERSION"),
-			AdditionalValues:      map[string]string{},
-		})
+		By("Waiting for Rancher to deploy Turtles")
+		capiframework.WaitForDeploymentsAvailable(ctx, capiframework.WaitForDeploymentsAvailableInput{
+			Getter: setupClusterResult.BootstrapClusterProxy.GetClient(),
+			Deployment: &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{
+				Name:      "rancher-turtles-controller-manager",
+				Namespace: "cattle-turtles-system",
+			}},
+		}, e2eConfig.GetIntervals(setupClusterResult.BootstrapClusterProxy.GetName(), "wait-controllers")...)
 
 		By("Deploying required CAPIProviders")
-		// Note that caprke2 is already deployed by default by the Turtles chart.
 		testenv.CAPIOperatorDeployProvider(ctx, testenv.CAPIOperatorDeployProviderInput{
 			BootstrapClusterProxy: setupClusterResult.BootstrapClusterProxy,
 			CAPIProvidersYAML: [][]byte{
 				suites.CAPIProviderDocker,
 				suites.CAPIProviderKubeadm,
+				suites.CAPIProviderRKE2,
 			},
 			WaitForDeployments: testenv.DefaultDeployments,
 		})
@@ -121,19 +128,15 @@ var _ = SynchronizedAfterSuite(
 	},
 	func() {
 		By("Dumping artifacts from the bootstrap cluster")
-		testenv.DumpBootstrapCluster(ctx)
+		testenv.DumpBootstrapCluster(ctx, bootstrapClusterProxy.GetKubeconfigPath())
 
 		config := e2e.LoadE2EConfig()
 		// skipping error check since it is already done at the beginning of the test in e2e.ValidateE2EConfig()
 		skipCleanup, _ := strconv.ParseBool(config.GetVariableOrEmpty(e2e.SkipResourceCleanupVar))
 		if skipCleanup {
-			// add a log line about skipping charts uninstallation and cluster cleanup
+			By(fmt.Sprintf("Skipping management Cluster %s cleanup", bootstrapClusterProxy.GetName()))
 			return
 		}
-
-		testenv.UninstallRancherTurtles(ctx, testenv.UninstallRancherTurtlesInput{
-			BootstrapClusterProxy: bootstrapClusterProxy,
-		})
 
 		testenv.CleanupTestCluster(ctx, testenv.CleanupTestClusterInput{
 			SetupTestClusterResult: *setupClusterResult,

@@ -13,8 +13,6 @@ kind: Cluster
 metadata:
   name: ${CLUSTER_NAME}
   namespace: ${NAMESPACE}
-  labels:
-    cni: ${CLUSTER_NAME}-crs-kindnet-0
 spec:
   clusterNetwork:
     pods:
