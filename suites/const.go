@@ -44,4 +44,7 @@ var (
 
 	//go:embed data/providers/kubeadm.yaml
 	CAPIProviderKubeadm []byte
+
+	//go:embed data/providers/rke2.yaml
+	CAPIProviderRKE2 []byte
 )
