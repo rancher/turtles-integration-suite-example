@@ -26,7 +26,8 @@ fi
 source "$(dirname "${BASH_SOURCE[0]}")/utils.sh"
 
 GOPATH_BIN="$(go env GOPATH)/bin/"
-MINIMUM_KUBECTL_VERSION=v1.31.0
+MINIMUM_KUBECTL_VERSION=v1.34.1
+MINIMUM_KUBECTL_VERSION_EXPECTED_SHA256=7721f265e18709862655affba5343e85e1980639395d5754473dafaadcaa69e3 # immutable sha256 for v1.34.1
 goarch="$(go env GOARCH)"
 goos="$(go env GOOS)"
 
@@ -47,6 +48,8 @@ verify_kubectl_version() {
       echo "Updating to ${MINIMUM_KUBECTL_VERSION}."
 
       curl -sLo "${GOPATH_BIN}/kubectl" "https://dl.k8s.io/release/${MINIMUM_KUBECTL_VERSION}/bin/${goos}/${goarch}/kubectl"
+      echo "$MINIMUM_KUBECTL_VERSION_EXPECTED_SHA256  $GOPATH_BIN/kubectl" | sha256sum --check
+
       chmod +x "${GOPATH_BIN}/kubectl"
       verify_gopath_bin
     else
