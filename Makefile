@@ -37,8 +37,8 @@ GO_VERSION ?= $(shell grep "go " go.mod | head -1 |awk '{print $$NF}')
 GO_INSTALL := ./scripts/go-install.sh
 
 GINKGO_BIN := ginkgo
-GINGKO_VER := $(shell grep "github.com/onsi/ginkgo/v2" go.mod | head -1 |awk '{print $$NF}')
-GINKGO := $(abspath $(TOOLS_BIN_DIR)/$(GINKGO_BIN)-$(GINGKO_VER))
+GINKGO_VER := $(shell grep "github.com/onsi/ginkgo/v2" go.mod | head -1 |awk '{print $$NF}')
+GINKGO := $(abspath $(TOOLS_BIN_DIR)/$(GINKGO_BIN)-$(GINKGO_VER))
 GINKGO_PKG := github.com/onsi/ginkgo/v2/ginkgo
 
 HELM_VER := v3.18.4
@@ -55,7 +55,7 @@ $(HELM): ## Put helm into tools folder.
 	rm -f $(TOOLS_BIN_DIR)/get_helm.sh
 
 $(GINKGO): # Build ginkgo from tools folder.
-	GOBIN=$(TOOLS_BIN_DIR) $(GO_INSTALL) $(GINKGO_PKG) $(GINKGO_BIN) $(GINGKO_VER)
+	GOBIN=$(TOOLS_BIN_DIR) $(GO_INSTALL) $(GINKGO_PKG) $(GINKGO_BIN) $(GINKGO_VER)
 
 kubectl: # Download kubectl cli if not available, and crust-gather plugin into tools bin folder
 	scripts/ensure-kubectl.sh \
