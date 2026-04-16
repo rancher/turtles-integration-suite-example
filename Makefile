@@ -25,6 +25,7 @@ TOOLS_DIR := hack/tools
 TOOLS_BIN_DIR := $(abspath $(TOOLS_DIR)/$(BIN_DIR))
 ARTIFACTS_FOLDER ?= ${ROOT_DIR}/_artifacts
 ARTIFACTS ?= ${ARTIFACTS_FOLDER}
+CLUSTERCTL_CONFIG_PATH := ${ROOT_DIR}/config/clusterctl-config.yaml
 
 export PATH := $(abspath $(TOOLS_BIN_DIR)):$(PATH)
 export KREW_ROOT := $(abspath $(TOOLS_BIN_DIR))
@@ -41,14 +42,14 @@ GINKGO_VER := $(shell grep "github.com/onsi/ginkgo/v2" go.mod | head -1 |awk '{p
 GINKGO := $(abspath $(TOOLS_BIN_DIR)/$(GINKGO_BIN)-$(GINKGO_VER))
 GINKGO_PKG := github.com/onsi/ginkgo/v2/ginkgo
 
-HELM_VER := v3.18.4
+HELM_VER := v4.1.4
 HELM_BIN := helm
 HELM := $(TOOLS_BIN_DIR)/$(HELM_BIN)-$(HELM_VER)
 
 $(HELM): ## Put helm into tools folder.
 	mkdir -p $(TOOLS_BIN_DIR)
 	rm -f "$(TOOLS_BIN_DIR)/$(HELM_BIN)*"
-	curl --retry $(CURL_RETRIES) -fsSL -o $(TOOLS_BIN_DIR)/get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+	curl --retry $(CURL_RETRIES) -fsSL -o $(TOOLS_BIN_DIR)/get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
 	chmod 700 $(TOOLS_BIN_DIR)/get_helm.sh
 	USE_SUDO=false HELM_INSTALL_DIR=$(TOOLS_BIN_DIR) DESIRED_VERSION=$(HELM_VER) BINARY_NAME=$(HELM_BIN)-$(HELM_VER) $(TOOLS_BIN_DIR)/get_helm.sh
 	ln -sf $(HELM) $(TOOLS_BIN_DIR)/$(HELM_BIN)
@@ -58,8 +59,7 @@ $(GINKGO): # Build ginkgo from tools folder.
 	GOBIN=$(TOOLS_BIN_DIR) $(GO_INSTALL) $(GINKGO_PKG) $(GINKGO_BIN) $(GINKGO_VER)
 
 kubectl: # Download kubectl cli if not available, and crust-gather plugin into tools bin folder
-	scripts/ensure-kubectl.sh \
-		-b $(TOOLS_BIN_DIR) ""
+	scripts/ensure-kubectl.sh
 
 #
 # Ginkgo configuration.
@@ -82,7 +82,8 @@ E2E_CONFIG=$(E2E_CONFIG) \
 ARTIFACTS=$(ARTIFACTS) \
 ARTIFACTS_FOLDER=$(ARTIFACTS_FOLDER) \
 HELM_BINARY_PATH=$(HELM) \
-TURTLES_PATH=$(E2E_CONFIG) #not really used, just for validation
+CLUSTERCTL_BINARY_PATH=$(CLUSTERCTL_CONFIG_PATH) \
+TURTLES_PATH=$(E2E_CONFIG)
 
 .PHONY: test-e2e
 test-e2e: $(HELM) $(GINKGO) kubectl ## Run the end-to-end tests

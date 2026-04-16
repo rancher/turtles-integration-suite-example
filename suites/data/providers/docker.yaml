@@ -9,4 +9,5 @@ metadata:
   name: docker
   namespace: capd-system
 spec:
+  version: v1.12.2
   type: infrastructure
