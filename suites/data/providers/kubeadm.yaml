@@ -9,6 +9,7 @@ metadata:
   name: kubeadm-bootstrap
   namespace: capi-kubeadm-bootstrap-system
 spec:
+  version: v1.12.2
   name: kubeadm
   type: bootstrap
 ---
@@ -23,5 +24,6 @@ metadata:
   name: kubeadm-control-plane
   namespace: capi-kubeadm-control-plane-system
 spec:
+  version: v1.12.2
   name: kubeadm
   type: controlPlane

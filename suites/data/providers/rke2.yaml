@@ -9,6 +9,7 @@ metadata:
   name: rke2-bootstrap
   namespace: capi-rke2-bootstrap-system
 spec:
+  version: v0.24.2
   name: rke2
   type: bootstrap
 ---
@@ -23,5 +24,6 @@ metadata:
   name: rke2-control-plane
   namespace: capi-rke2-control-plane-system
 spec:
+  version: v0.24.2
   name: rke2
   type: controlPlane

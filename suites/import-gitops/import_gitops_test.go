@@ -37,21 +37,18 @@ var _ = Describe("[Docker] [Kubeadm]  Create and delete CAPI cluster functionali
 
 	specs.CreateUsingGitOpsSpec(ctx, func() specs.CreateUsingGitOpsSpecInput {
 		return specs.CreateUsingGitOpsSpecInput{
-			E2EConfig:                      e2e.LoadE2EConfig(),
-			BootstrapClusterProxy:          bootstrapClusterProxy,
-			ClusterTemplate:                suites.CAPIDockerKubeadm,
-			ClusterName:                    "kubeadm-test",
-			ControlPlaneMachineCount:       ptr.To(1),
-			WorkerMachineCount:             ptr.To(1),
-			LabelNamespace:                 true,
-			TestClusterReimport:            true,
-			RancherServerURL:               hostName,
-			CAPIClusterCreateWaitName:      "wait-rancher",
-			DeleteClusterWaitName:          "wait-controllers",
-			CapiClusterOwnerLabel:          e2e.CapiClusterOwnerLabel,
-			CapiClusterOwnerNamespaceLabel: e2e.CapiClusterOwnerNamespaceLabel,
-			OwnedLabelName:                 e2e.OwnedLabelName,
-			AdditionalTemplates:            [][]byte{suites.KindnetConfig},
+			E2EConfig:                 e2e.LoadE2EConfig(),
+			BootstrapClusterProxy:     bootstrapClusterProxy,
+			ClusterTemplate:           suites.CAPIDockerKubeadm,
+			ClusterName:               "kubeadm-test",
+			ControlPlaneMachineCount:  ptr.To(1),
+			WorkerMachineCount:        ptr.To(1),
+			LabelNamespace:            true,
+			TestClusterReimport:       true,
+			RancherServerURL:          hostName,
+			CAPIClusterCreateWaitName: "wait-rancher",
+			DeleteClusterWaitName:     "wait-controllers",
+			AdditionalTemplates:       [][]byte{suites.KindnetConfig},
 		}
 	})
 })
@@ -64,21 +61,18 @@ var _ = Describe("[Docker] [RKE2] Create and delete CAPI cluster functionality s
 
 	specs.CreateUsingGitOpsSpec(ctx, func() specs.CreateUsingGitOpsSpecInput {
 		return specs.CreateUsingGitOpsSpecInput{
-			E2EConfig:                      e2e.LoadE2EConfig(),
-			BootstrapClusterProxy:          bootstrapClusterProxy,
-			ClusterTemplate:                suites.CAPIDockerRKE2,
-			ClusterName:                    "rke2-test",
-			ControlPlaneMachineCount:       ptr.To(1),
-			WorkerMachineCount:             ptr.To(1),
-			LabelNamespace:                 true,
-			TestClusterReimport:            false,
-			RancherServerURL:               hostName,
-			CAPIClusterCreateWaitName:      "wait-rancher",
-			DeleteClusterWaitName:          "wait-controllers",
-			CapiClusterOwnerLabel:          e2e.CapiClusterOwnerLabel,
-			CapiClusterOwnerNamespaceLabel: e2e.CapiClusterOwnerNamespaceLabel,
-			OwnedLabelName:                 e2e.OwnedLabelName,
-			AdditionalTemplates:            [][]byte{suites.LoadBalancerConfig},
+			E2EConfig:                 e2e.LoadE2EConfig(),
+			BootstrapClusterProxy:     bootstrapClusterProxy,
+			ClusterTemplate:           suites.CAPIDockerRKE2,
+			ClusterName:               "rke2-test",
+			ControlPlaneMachineCount:  ptr.To(1),
+			WorkerMachineCount:        ptr.To(1),
+			LabelNamespace:            true,
+			TestClusterReimport:       false,
+			RancherServerURL:          hostName,
+			CAPIClusterCreateWaitName: "wait-rancher",
+			DeleteClusterWaitName:     "wait-controllers",
+			AdditionalTemplates:       [][]byte{suites.LoadBalancerConfig},
 		}
 	})
 })
