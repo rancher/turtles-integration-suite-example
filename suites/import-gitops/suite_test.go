@@ -65,17 +65,11 @@ var _ = SynchronizedBeforeSuite(
 			Scheme:    e2e.InitScheme(),
 		})
 
-		By("Deploying CertManager")
-		testenv.DeployCertManager(ctx, testenv.DeployCertManagerInput{
-			BootstrapClusterProxy: setupClusterResult.BootstrapClusterProxy,
-		})
-
 		By("Deploying Rancher Ingress")
 		testenv.RancherDeployIngress(ctx, testenv.RancherDeployIngressInput{
-			BootstrapClusterProxy:     setupClusterResult.BootstrapClusterProxy,
-			CustomIngress:             e2e.NginxIngress,
-			CustomIngressLoadBalancer: e2e.NginxIngressLoadBalancer,
-			DefaultIngressClassPatch:  e2e.IngressClassPatch,
+			BootstrapClusterProxy:    setupClusterResult.BootstrapClusterProxy,
+			CustomIngress:            e2e.TraefikIngress,
+			DefaultIngressClassPatch: e2e.IngressClassPatch,
 		})
 
 		By("Deploying Rancher")

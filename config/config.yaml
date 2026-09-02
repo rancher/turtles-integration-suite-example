@@ -1,6 +1,3 @@
-# Keep this configuration synced with Turtles.
-# See: https://raw.githubusercontent.com/rancher/turtles/refs/tags/v0.25.1/test/e2e/config/operator.yaml
-
 managementClusterName: rancher-turtles-integration
 
 intervals:
@@ -20,30 +17,18 @@ variables:
   ARTIFACTS_FOLDER: "_artifacts"
 
   # Kubernetes Configuration
-  KUBERNETES_VERSION: "v1.35.0"
-  KUBERNETES_MANAGEMENT_VERSION: "v1.35.0"
-  RKE2_VERSION: "v1.35.0+rke2r1"
+  KUBERNETES_VERSION: "v1.36.1"
+  KUBERNETES_MANAGEMENT_VERSION: "v1.36.1"
+  RKE2_VERSION: "v1.36.0+rke2r1"
 
   # CLI Tool Paths
   HELM_EXTRA_VALUES_FOLDER: "/tmp"
 
   # Rancher Configuration
-  RANCHER_VERSION: "v2.14.2"
+  RANCHER_VERSION: "v2.15.0"
   RANCHER_REPO_NAME: "rancher-latest"
   RANCHER_PATH: "rancher-latest/rancher"
   RANCHER_URL: "https://releases.rancher.com/server-charts/latest"
   RANCHER_FEATURES: ""
   RANCHER_HOSTNAME: "localhost"
   RANCHER_PASSWORD: "rancheradmin"
-
-  # External Charts and Dependencies
-  CERT_MANAGER_REPO_NAME: "jetstack"
-  CERT_MANAGER_URL: "https://charts.jetstack.io"
-  CERT_MANAGER_PATH: "jetstack/cert-manager"
-
-  # Ingress Configuration (Ngrok)
-  NGROK_REPO_NAME: "ngrok"
-  NGROK_URL: "https://charts.ngrok.com"
-  NGROK_PATH: "ngrok/ngrok-operator"
-  NGROK_API_KEY: ""
-  NGROK_AUTHTOKEN: ""
